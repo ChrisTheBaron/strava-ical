@@ -29,3 +29,4 @@ _testmain.go
 /strava-ical
 /strava-ical.exe
 /config.toml
+/db.sqlite

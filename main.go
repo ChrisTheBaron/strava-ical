@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ChrisTheBaron/strava-ical/structs"
+	"github.com/ChrisTheBaron/strava-ical/entities"
 	"github.com/ChrisTheBaron/strava-ical/utils"
 	"github.com/ChrisTheBaron/strava-ical/web"
 	"github.com/urfave/cli"
@@ -12,15 +12,15 @@ import (
 
 func main() {
 
-	var configfilepath string
-	var config structs.Config
+	var configFilePath string
+	var config entities.Config
 
 	app := cli.NewApp()
 	app.Name = "strava-ical"
 	app.HideVersion = true
 	app.Usage = "Allows subscription to your Strava history using ICAL."
 	app.Authors = []cli.Author{
-		cli.Author{
+		{
 			Name:  "Chris Taylor",
 			Email: "christhebaron@gmail.com",
 		},
@@ -30,21 +30,24 @@ func main() {
 		cli.StringFlag{
 			Name:        "config-file, config, c",
 			Usage:       "Load configuration from `FILE` (required)",
-			Destination: &configfilepath,
+			Destination: &configFilePath,
 		},
 	}
 
 	// Before the application runs, let's just do some validation
 	app.Before = func(c *cli.Context) error {
-		if "" == configfilepath {
+		if "" == configFilePath {
 			return cli.NewExitError("Config file is required", 1)
 		}
 		var err error
 		//Get the config from the config.yaml file
-		config, err = utils.GetConfigFromFile(configfilepath)
-
+		config, err = utils.GetConfigFromFile(configFilePath)
 		if err != nil {
 			return cli.NewExitError(err.Error(), 1)
+		}
+		errs := utils.ValidateConfig(config)
+		if len(errs) > 0 {
+			return cli.NewExitError(fmt.Sprintf("Invalid config file. %#v", errs), 1)
 		}
 		return nil
 	}

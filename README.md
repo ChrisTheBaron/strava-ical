@@ -1,18 +1,10 @@
 # strava-ical
 
-Allows you to import your Strava activies into your Google calendar (or any calendar that supports ICAL).
+Allows users to import their Strava activies into any calendar that supports ICAL.
 
 [How to add to calendar](http://lmgtfy.com/?q=add+webcal+to+calendar).
 
 Uses a lot of the same code as [ury-ical](https://github.com/UniversityRadioYork/ury-ical).
-
-## Preparation
-
-- Get a Strava API key. [https://strava.github.io/api/#access](https://strava.github.io/api/#access)
-- Get your Strava athlete ID. _It's the number at the end of the URL when you visit your profile._
-- Copy `config.example.toml` to `config.toml`
-- Customise your calendar entry name and description in `config.toml` using the fields of [`strava.ActivitySummary`](https://github.com/strava/go.strava/blob/master/activities.go)
-- There is also a field available called `DistanceKm` which is rounded to 2dp.
 
 ## Running
 
@@ -23,12 +15,45 @@ $ ./strava-ical -c /path/to/config.toml
 
 ## Endpoints
 
-## `/strava.ics`
+### `GET /`
 
-All activities for the athlete.
+Show Static Content.
 
-# TODO
+### `GET /login`
 
-- [ ] Filter by activity type.
-- [ ] Get description of activities.
-- [ ] "Follow" other athletes.
+ - Check for cookie
+ - If cookie present, then `/calendars`
+ - Else `/auth`
+
+### `GET /auth`
+
+  - Redirect to Strava login.
+    - On success.
+    - Store token.
+    - Generate JWT.
+    - Store JWT as cookie.
+ - On failure
+   - Show static content.
+
+### `GET /calendars`
+
+  - If no cookie, redirect to `/login`
+  - List users calendars
+
+### `POST /calendars/`
+
+ - Create new calendar for user.
+ - Redirect to `/calendar/{id}`
+
+### `GET /calendar/{id}`
+
+ - Show calendar settings.
+
+### `GET /calendar/{id}.ics`
+
+ - Get calendar as ICS.
+
+### `DELETE /calendar/{id}`
+
+ - Delete calendar.
+ - Redirect to `/calendars`

@@ -9,32 +9,36 @@
 # This is the main config file for strava-ical.
 # Any changes to this config should be reflected in the struct `structs.Config`
 
-stravaApiKey = "abdef12345678"
-stravaAthleteId = 12345678
+stravaClientId = 12345
+stravaClientSecret = "abcdef12345"
 
-shortName	= "Strava"
-longName	= "Strava"
-calendarDescription = """*** Warning - This feature is currently proof of concept. Information is not guaranteed to be correct. ***"""
+jwtKey = "this is a super secret key. please replace me."
+jwtCookieName = "strava-ical-jwt"
 
-calendarEntryName = """{{.Name}}"""
-calendarEntryDescription ="""Distance: {{.Distance}}km"""
+dbPath = "./db.sqlite"
 
 # This is the config for the server
 [server]
-	address	= "localhost"
+	address	= "strava.cyclingapps.tech"
 	port 	= 3000
 	timeout	= 0
 
 # This is the default config for the VCalendar
 [calendar]
-	PRODID			= "-//ChrisTheBaron//Strava//EN"
-	URL				= "http:/christhebaron.co.uk/"
-	NAME			= "Strava"
-	X_WR_CALNAME	= "Strava"
-	TIMEZONE_ID		= "Europe/London"
-	X_WR_TIMEZONE	= "Europe/London"
-	REFRESH_INTERVAL	= "PT12H"
-	X_PUBLISHED_TTL		= "PT12H"
-	METHOD		= "PUBLIC"
-	VERSION		= "2.0"
-	CALSCALE	= "GREGORIAN"
+	PRODID          = "-//Cycling Apps//Strava//EN"
+	URL             = "http:/cyclingapps.co.uk/"
+	NAME            = "Strava Activities"
+	X_WR_CALNAME    = "Strava Activities"
+	TIMEZONE_ID     = "Europe/London"
+	X_WR_TIMEZONE   = "Europe/London"
+	REFRESH_INTERVAL    = "PT12H"
+	X_PUBLISHED_TTL     = "PT12H"
+	METHOD      = "PUBLIC"
+	VERSION     = "2.0"
+	CALSCALE    = "GREGORIAN"
+
+[slugs]
+    login           = "/login"
+    oauth           = "/auth"
+    oauthcallback   = "/exchange_token"
+    dashboard       = "/calendars"
