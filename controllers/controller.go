@@ -107,14 +107,24 @@ func (c *Controller) renderICAL(cal ical.VCalendar, activities []*strava.Activit
 		var name bytes.Buffer
 		var desc bytes.Buffer
 
-		err := nt.Execute(&name, activity)
+		err := nt.Execute(&name, struct {
+			strava.ActivitySummary
+			DistanceKm string
+		}{
+			DistanceKm: fmt.Sprintf("%.2f", activity.Distance / 1000),
+		})
 
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
-		err = dt.Execute(&desc, activity)
+		err = dt.Execute(&desc, struct {
+			strava.ActivitySummary
+			DistanceKm string
+		}{
+			DistanceKm: fmt.Sprintf("%.2f", activity.Distance / 1000),
+		})
 
 		if err != nil {
 			http.Error(w, err.Error(), 500)
