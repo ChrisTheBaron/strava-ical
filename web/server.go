@@ -7,6 +7,7 @@ import (
 	"github.com/ChrisTheBaron/strava-ical/entities"
 	"github.com/ChrisTheBaron/strava-ical/middleware"
 	"github.com/ChrisTheBaron/strava-ical/model"
+	"github.com/ChrisTheBaron/strava-ical/services"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 	"github.com/strava/go.strava"
@@ -30,39 +31,77 @@ func NewServer(c *entities.Config) (*Server, error) {
 
 	s := Server{negroni.Classic()}
 
+	/*
+		------------------------------------------
+		               FACTORIES
+		------------------------------------------
+	*/
+
+	sf := services.NewStravaFactory(c)
+
+	/*
+		------------------------------------------
+		                MODELS
+		------------------------------------------
+	*/
+
 	um := model.NewUser(c, db)
+	cm := model.NewCalendar(c, db)
 
-	router := mux.NewRouter().StrictSlash(true)
-	router.NotFoundHandler = http.HandlerFunc(http.NotFound)
+	/*
+	   ------------------------------------------
+	                 MIDDLEWARE
+	   ------------------------------------------
+	*/
 
-	getRouter := router.Methods("GET").Subrouter()
-
-	// Routes go in here
-
-	cc := controller.NewCalendar(c)
-
-	getRouter.HandleFunc(c.Slugs.Dashboard, middleware.VerifyJWT(um, db, c, http.HandlerFunc(cc.Get)))
-
-	//ic := controllers.NewIndexController(client, c)
-	//getRouter.HandleFunc("/strava.ics", ic.Get)
+	am := middleware.NewVerifyJWT(um, db, c)
 
 	authenticator := strava.OAuthAuthenticator{
 		CallbackURL:            fmt.Sprintf("http://%s%s", c.Server.Address, c.Slugs.OAuthCallback),
 		RequestClientGenerator: nil,
 	}
 
-	ac := controller.NewAuth(c, um, authenticator)
-
-	path, err := authenticator.CallbackPath()
+	autoClbPath, err := authenticator.CallbackPath()
 
 	if err != nil {
 		return nil, err
 	}
 
-	getRouter.Handle(c.Slugs.OAuth, http.HandlerFunc(ac.OAuthHandler))
-	getRouter.Handle(path, authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure))
+	/*
+		------------------------------------------
+		                CONTROLLERS
+		------------------------------------------
+	*/
 
-	// End routes
+	cc := controller.NewCalendar(c, cm, um, sf)
+	ac := controller.NewAuth(c, um, authenticator)
+
+	/*
+		------------------------------------------
+		                ROUTES
+		------------------------------------------
+	*/
+
+	router := mux.NewRouter().StrictSlash(true)
+	router.NotFoundHandler = http.HandlerFunc(http.NotFound)
+
+	getRouter := router.Methods("GET").Subrouter()
+	postRouter := router.Methods("POST").Subrouter()
+	//deleteRouter := router.Methods("DELETE").Subrouter()
+
+	getRouter.Handle(c.Slugs.OAuth, http.HandlerFunc(ac.OAuthHandler))
+	getRouter.Handle(autoClbPath, authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure))
+
+	// /calendar/
+	// list all
+	getRouter.HandleFunc(c.Slugs.Calendars, am(http.HandlerFunc(cc.Get)))
+
+	// create
+	postRouter.HandleFunc(c.Slugs.Calendars, am(http.HandlerFunc(cc.Post)))
+
+	// list
+	getRouter.HandleFunc(fmt.Sprintf("%s/{id:.{36}}.ics", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetICALById)))
+	getRouter.HandleFunc(fmt.Sprintf("%s/{id:.{36}}/", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
 
 	s.UseHandler(router)
 

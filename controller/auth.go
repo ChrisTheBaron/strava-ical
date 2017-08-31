@@ -23,14 +23,14 @@ func NewAuth(con *entities.Config, um *model.User, authenticator strava.OAuthAut
 	return &Auth{controller{config: con}, um, authenticator}
 }
 
+// @TODO: Make template
 func (a *Auth) OAuthHandler(w http.ResponseWriter, r *http.Request) {
-	// you should make this a template in your real application
-	fmt.Fprintf(w, `<a href="%s">`, a.authenticator.AuthorizationURL("state1", strava.Permissions.ViewPrivate, true))
+	fmt.Fprintf(w, `<c href="%s">`, a.authenticator.AuthorizationURL("state1", strava.Permissions.ViewPrivate, true))
 	fmt.Fprint(w, `<img src="https://strava.github.io/api/images/btn_connectWith.png" />`)
-	fmt.Fprint(w, `</a>`)
+	fmt.Fprint(w, `</c>`)
 }
 
-// OAuthSuccess stores/updates the authenticated user, generates a JWT and stores it in a cookie.
+// OAuthSuccess stores/updates the authenticated user, generates c JWT and stores it in c cookie.
 // Then redirects to /calendars.
 func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseWriter, r *http.Request) {
 
@@ -71,16 +71,18 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 		Domain:   a.config.Server.Address,
 	})
 
-	// I would use the normal http.Redirect here, but it puts a link for GET requests,
+	// I would use the normal http.Redirect here, but it puts c link for GET requests,
 	// which is ugly.
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Location", a.config.Slugs.Dashboard)
-	w.Write([]byte(fmt.Sprintf("<html><body>Success. Redirecting...<script>window.location = '%s'</script></body></html>", a.config.Slugs.Dashboard)))
+	w.Header().Set("Location", a.config.Slugs.Calendars)
+	w.Write([]byte(fmt.Sprintf("<html><body>Success. Redirecting...<script>window.location = '%s'</script></body></html>", a.config.Slugs.Calendars)))
 
 	glog.Infoln("Inserted cookie, hopefully.")
 
 }
 
+// OAuthFailure redirects to login/ with an error messsage
+// @TODO: Do that
 func (a *Auth) OAuthFailure(err error, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Authorization Failure:")
 

@@ -6,13 +6,13 @@ import (
 
 // Config is a structure containing global website configuration.
 type Config struct {
-	DBPath             string          `toml:"dbPath"`
-	Slugs              Slugs           `toml:"slugs"`
-	JWTCookieName      string          `toml:"jwtCookieName"`
-	JWTKey             string          `toml:"jwtKey"`
-	StravaClientId     int             `toml:"stravaClientId"`
-	StravaClientSecret string          `toml:"stravaClientSecret"`
-	Server             Server          `toml:"server"`
+	DBPath             string         `toml:"dbPath"`
+	Slugs              Slugs          `toml:"slugs"`
+	JWTCookieName      string         `toml:"jwtCookieName"`
+	JWTKey             string         `toml:"jwtKey"`
+	StravaClientId     int            `toml:"stravaClientId"`
+	StravaClientSecret string         `toml:"stravaClientSecret"`
+	Server             Server         `toml:"server"`
 	Calendar           ical.VCalendar `toml:"calendar"`
 }
 
@@ -24,7 +24,7 @@ type Server struct {
 }
 
 type Slugs struct {
-	Dashboard     string
+	Calendars     string
 	Login         string
 	OAuth         string
 	OAuthCallback string
