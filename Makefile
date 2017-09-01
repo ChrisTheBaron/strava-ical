@@ -23,5 +23,5 @@ install: $(OUT)
 	[ -d /etc/strava-ical/ ] || mkdir /etc/strava-ical/
 	[ -d /var/log/strava-ical/ ] || mkdir /var/log/strava-ical/
 	cp $(OUT) /usr/local/bin/strava-ical
-	cp ./config.example.toml /etc/strava-ical/config.toml
-	cp ./supervisor.example.conf /etc/supervisor/conf.d/strava-ical.conf
+	[ -e /etc/strava-ical/config.toml ] || cp ./config.example.toml /etc/strava-ical/config.toml
+	[ -e /etc/supervisor/conf.d/strava-ical.conf ] || cp ./supervisor.example.conf /etc/supervisor/conf.d/strava-ical.conf
