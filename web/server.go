@@ -10,10 +10,11 @@ import (
 	"github.com/ChrisTheBaron/strava-ical/services"
 	"github.com/ChrisTheBaron/strava-ical/utils"
 	"github.com/codegangsta/negroni"
-	"github.com/elazarl/go-bindata-assetfs"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/strava/go.strava"
 	"net/http"
+	"strings"
 )
 
 type Server struct {
@@ -104,10 +105,17 @@ func NewServer(c *entities.Config) (*Server, error) {
 
 	getRouter.Handle("/", http.HandlerFunc(ic.Get))
 
-	hand := http.FileServer(
-		&assetfs.AssetFS{Asset: utils.Asset, AssetDir: utils.AssetDir, AssetInfo: utils.AssetInfo, Prefix: "static"})
-
-	getRouter.Handle("/static", hand)
+	getRouter.PathPrefix("/static").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := strings.TrimLeft(r.URL.Path, "/")
+		glog.Infoln(url)
+		if asset, err := utils.Asset(url); err == nil {
+			w.WriteHeader(http.StatusOK)
+			w.Write(asset)
+		} else {
+			glog.Error(err)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
 
 	getRouter.Handle(fmt.Sprintf("/%s", c.Slugs.OAuth), http.HandlerFunc(ac.OAuthHandler))
 	getRouter.Handle(autoClbPath, authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure))
