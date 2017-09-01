@@ -244,6 +244,6 @@ func (c *Calendar) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.redirect(w, fmt.Sprintf("%s/%s", c.config.Slugs.Calendars, insertId.String()))
+	c.redirectWithStatus(w, fmt.Sprintf("%s/%s", c.config.Slugs.Calendars, insertId.String()), http.StatusCreated)
 
 }

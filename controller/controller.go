@@ -31,6 +31,10 @@ func (c *controller) getUserIdFromContext(r *http.Request) (int, error) {
 // redirect accepts a slug ("login","calendar", etc.) and redirects to an absolute url
 // using the rootUrl and protocol in config.
 func (c *controller) redirect(w http.ResponseWriter, url string) {
+	c.redirectWithStatus(w, url, http.StatusTemporaryRedirect)
+}
+
+func (c *controller) redirectWithStatus(w http.ResponseWriter, url string, status int) {
 	w.Header().Set("Location", fmt.Sprintf("%s://%s/%s", c.config.Protocol, c.config.RootUrl, url))
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	w.WriteHeader(status)
 }
