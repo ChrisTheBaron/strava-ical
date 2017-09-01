@@ -18,7 +18,7 @@ utils/assets.go: views/** static/**
 clean:
 	rm $(OUT) utils/assets.go
 
-install $(OUT):
+install: $(OUT)
 	cp $(OUT) /usr/local/bin/strava-ical
 	cp ./config.example.toml /etc/strava-ical/config.toml
 	cp ./supervisor.example.conf /etc/supervisor/conf.d/strava-ical.conf
