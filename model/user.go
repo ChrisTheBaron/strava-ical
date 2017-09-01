@@ -25,7 +25,7 @@ func (m *User) ValidateUserId(id int) (bool, error) {
 
 func (m *User) Upsert(user entities.User) error {
 	_, err := m.db.Exec("INSERT OR REPLACE INTO users (strava_id, firstname, lastname, email, strava_access_token) VALUES (?, ?, ?, ?, ?);",
-		user.GetStravaId(), user.GetFirstname(), user.GetLastname(), user.GetEmail(), user.GetStravaAccessToken())
+		user.StravaId, user.Firstname, user.Lastname, user.Email, user.StravaAccessToken)
 	return err
 }
 
@@ -45,7 +45,13 @@ func (m *User) GetById(id int) (user entities.User, err error) {
 		return
 	}
 
-	user = entities.NewUser(firstname, lastname, email, strava_id, strava_access_token)
+	user = entities.User{
+		Firstname:         firstname,
+		Lastname:          lastname,
+		StravaId:          strava_id,
+		Email:             email,
+		StravaAccessToken: strava_access_token,
+	}
 
 	return
 

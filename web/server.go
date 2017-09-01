@@ -8,7 +8,9 @@ import (
 	"github.com/ChrisTheBaron/strava-ical/middleware"
 	"github.com/ChrisTheBaron/strava-ical/model"
 	"github.com/ChrisTheBaron/strava-ical/services"
+	"github.com/ChrisTheBaron/strava-ical/utils"
 	"github.com/codegangsta/negroni"
+	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
 	"github.com/strava/go.strava"
 	"net/http"
@@ -30,6 +32,14 @@ func NewServer(c *entities.Config) (*Server, error) {
 	}
 
 	s := Server{negroni.Classic()}
+
+	/*
+	   ------------------------------------------
+	   				UTILS
+	   ------------------------------------------
+	*/
+
+	tr := utils.NewTemplate(c)
 
 	/*
 		------------------------------------------
@@ -57,7 +67,7 @@ func NewServer(c *entities.Config) (*Server, error) {
 	am := middleware.NewVerifyJWT(um, db, c)
 
 	authenticator := strava.OAuthAuthenticator{
-		CallbackURL:            fmt.Sprintf("http://%s%s", c.Server.Address, c.Slugs.OAuthCallback),
+		CallbackURL:            fmt.Sprintf("http://%s/%s", c.RootUrl, c.Slugs.OAuthCallback),
 		RequestClientGenerator: nil,
 	}
 
@@ -73,8 +83,10 @@ func NewServer(c *entities.Config) (*Server, error) {
 		------------------------------------------
 	*/
 
-	cc := controller.NewCalendar(c, cm, um, sf)
+	ec := controller.NewError(c, tr)
+	cc := controller.NewCalendar(c, cm, um, sf, tr)
 	ac := controller.NewAuth(c, um, authenticator)
+	ic := controller.NewIndex(c, tr)
 
 	/*
 		------------------------------------------
@@ -82,26 +94,34 @@ func NewServer(c *entities.Config) (*Server, error) {
 		------------------------------------------
 	*/
 
-	router := mux.NewRouter().StrictSlash(true)
-	router.NotFoundHandler = http.HandlerFunc(http.NotFound)
+	router := mux.NewRouter()
+
+	router.NotFoundHandler = http.HandlerFunc(ec.E404)
 
 	getRouter := router.Methods("GET").Subrouter()
 	postRouter := router.Methods("POST").Subrouter()
 	//deleteRouter := router.Methods("DELETE").Subrouter()
 
-	getRouter.Handle(c.Slugs.OAuth, http.HandlerFunc(ac.OAuthHandler))
+	getRouter.Handle("/", http.HandlerFunc(ic.Get))
+
+	hand := http.FileServer(
+		&assetfs.AssetFS{Asset: utils.Asset, AssetDir: utils.AssetDir, AssetInfo: utils.AssetInfo, Prefix: "static"})
+
+	getRouter.Handle("/static", hand)
+
+	getRouter.Handle(fmt.Sprintf("/%s", c.Slugs.OAuth), http.HandlerFunc(ac.OAuthHandler))
 	getRouter.Handle(autoClbPath, authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure))
 
 	// /calendar/
 	// list all
-	getRouter.HandleFunc(c.Slugs.Calendars, am(http.HandlerFunc(cc.Get)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s", c.Slugs.Calendars), am(http.HandlerFunc(cc.Get)))
 
 	// create
-	postRouter.HandleFunc(c.Slugs.Calendars, am(http.HandlerFunc(cc.Post)))
+	postRouter.HandleFunc(fmt.Sprintf("/%s", c.Slugs.Calendars), am(http.HandlerFunc(cc.Post)))
 
 	// list
-	getRouter.HandleFunc(fmt.Sprintf("%s/{id:.{36}}.ics", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetICALById)))
-	getRouter.HandleFunc(fmt.Sprintf("%s/{id:.{36}}/", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}.ics", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetICALById)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
 
 	s.UseHandler(router)
 

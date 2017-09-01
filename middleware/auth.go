@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/ChrisTheBaron/strava-ical/entities"
 	"github.com/ChrisTheBaron/strava-ical/model"
 	"github.com/ChrisTheBaron/strava-ical/utils"
@@ -20,16 +21,18 @@ func NewVerifyJWT(um *model.User, db *sql.DB, config *entities.Config) VerifyJWT
 	return VerifyJWT(func(next http.Handler) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			redirect := func() {
-				w.Header().Set("Location", config.Slugs.Login)
-				w.WriteHeader(http.StatusForbidden)
+			// redirect accepts a slug ("login","calendar", etc.) and redirects to an absolute url
+			// using the rootUrl and protocol in config.
+			redirect := func(url string) {
+				w.Header().Set("Location", fmt.Sprintf("%s://%s/%s", config.Protocol, config.RootUrl, url))
+				w.WriteHeader(http.StatusTemporaryRedirect)
 			}
 
-			token := getTokenFromRequest(config, r)
+			token := utils.GetTokenFromRequest(config, r)
 
 			if token == "" {
 				glog.Warningln("No Token set")
-				redirect()
+				redirect("/")
 				return
 			}
 
@@ -37,7 +40,7 @@ func NewVerifyJWT(um *model.User, db *sql.DB, config *entities.Config) VerifyJWT
 
 			if err != nil {
 				glog.Warningf("Failed to parse JWT: %s", err.Error())
-				redirect()
+				redirect("/")
 				return
 			}
 
@@ -45,7 +48,7 @@ func NewVerifyJWT(um *model.User, db *sql.DB, config *entities.Config) VerifyJWT
 
 			if err != nil {
 				glog.Warningf("Failed to validate user: %s", err.Error())
-				redirect()
+				redirect("/")
 				return
 			}
 
@@ -55,40 +58,8 @@ func NewVerifyJWT(um *model.User, db *sql.DB, config *entities.Config) VerifyJWT
 				next.ServeHTTP(w, r.WithContext(ctx))
 			} else {
 				glog.Warningln("Invalid user")
-				redirect()
+				redirect("/")
 			}
 		})
 	})
-}
-
-func getTokenFromRequest(c *entities.Config, r *http.Request) string {
-
-	var token string
-
-	token = getTokenFromHeader(c, r)
-
-	if token == "" {
-		token = getTokenFromCooke(c, r)
-	}
-
-	return token
-
-}
-
-func getTokenFromCooke(c *entities.Config, r *http.Request) string {
-
-	cookie, err := r.Cookie(c.JWTCookieName)
-
-	if err != nil {
-		glog.Warning(err)
-		return ""
-	}
-
-	return cookie.Value
-}
-
-func getTokenFromHeader(c *entities.Config, r *http.Request) string {
-
-	return r.Header.Get("Bearer")
-
 }

@@ -6,6 +6,8 @@ import (
 
 // Config is a structure containing global website configuration.
 type Config struct {
+	Protocol           string         `toml:"protocol"` // http or https
+	RootUrl            string         `toml:"rootUrl"`
 	DBPath             string         `toml:"dbPath"`
 	Slugs              Slugs          `toml:"slugs"`
 	JWTCookieName      string         `toml:"jwtCookieName"`
@@ -18,14 +20,15 @@ type Config struct {
 
 // Server is a structure containing server configuration.
 type Server struct {
-	Address string `toml:"address"`
-	Port    int    `toml:"port"`
-	Timeout int    `toml:"timout"`
+	ListenAddress string `toml:"listenAddress"`
+	ListenPort    int    `toml:"listenPort"`
+	Timeout       int    `toml:"timeout"`
 }
 
 type Slugs struct {
 	Calendars     string
-	Login         string
 	OAuth         string
 	OAuthCallback string
+	E404          string
+	E500          string
 }

@@ -23,11 +23,14 @@ func NewAuth(con *entities.Config, um *model.User, authenticator strava.OAuthAut
 	return &Auth{controller{config: con}, um, authenticator}
 }
 
-// @TODO: Make template
+// Login checks for a cookie/header, otherwise redirects to Strava for auth
 func (a *Auth) OAuthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, `<c href="%s">`, a.authenticator.AuthorizationURL("state1", strava.Permissions.ViewPrivate, true))
-	fmt.Fprint(w, `<img src="https://strava.github.io/api/images/btn_connectWith.png" />`)
-	fmt.Fprint(w, `</c>`)
+	if token := utils.GetTokenFromRequest(a.config, r); token != "" {
+		a.redirect(w, a.config.Slugs.Calendars)
+	} else {
+		http.Redirect(w, r,
+			a.authenticator.AuthorizationURL("state1", strava.Permissions.ViewPrivate, true), http.StatusTemporaryRedirect)
+	}
 }
 
 // OAuthSuccess stores/updates the authenticated user, generates c JWT and stores it in c cookie.
@@ -37,13 +40,19 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 	glog.Infoln("Authenticated successfully")
 	glog.Infof("Auth token: %s", auth.AccessToken)
 
-	u := entities.NewUser(auth.Athlete.FirstName, auth.Athlete.LastName, auth.Athlete.Email, auth.Athlete.Id, auth.AccessToken)
+	u := entities.User{
+		Firstname:         auth.Athlete.FirstName,
+		Lastname:          auth.Athlete.LastName,
+		StravaId:          auth.Athlete.Id,
+		Email:             auth.Athlete.Email,
+		StravaAccessToken: auth.AccessToken,
+	}
 
 	err := a.userModel.Upsert(u)
 
 	if err != nil {
 		glog.Error(err)
-		http.Redirect(w, r, a.config.Slugs.Login, http.StatusInternalServerError)
+		a.redirect(w, "/")
 		return
 	}
 
@@ -53,7 +62,7 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 
 	if err != nil {
 		glog.Error(err)
-		http.Redirect(w, r, a.config.Slugs.Login, http.StatusInternalServerError)
+		a.redirect(w, "/")
 		return
 	}
 
@@ -68,14 +77,10 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 		Secure:   false,
 		Expires:  expiration,
 		Path:     "/",
-		Domain:   a.config.Server.Address,
+		Domain:   a.config.RootUrl,
 	})
 
-	// I would use the normal http.Redirect here, but it puts c link for GET requests,
-	// which is ugly.
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Location", a.config.Slugs.Calendars)
-	w.Write([]byte(fmt.Sprintf("<html><body>Success. Redirecting...<script>window.location = '%s'</script></body></html>", a.config.Slugs.Calendars)))
+	a.redirect(w, a.config.Slugs.Calendars)
 
 	glog.Infoln("Inserted cookie, hopefully.")
 

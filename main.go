@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/ChrisTheBaron/strava-ical/entities"
 	"github.com/ChrisTheBaron/strava-ical/utils"
@@ -11,6 +12,9 @@ import (
 )
 
 func main() {
+
+	// So that glog prints to stderr instead of a log file
+	flag.Set("logtostderr", "true")
 
 	var configFilePath string
 	var config entities.Config
@@ -63,7 +67,7 @@ func main() {
 			return cli.NewExitError(err.Error(), 2)
 		}
 
-		l := fmt.Sprintf("%s:%d", config.Server.Address, config.Server.Port)
+		l := fmt.Sprintf("%s:%d", config.Server.ListenAddress, config.Server.ListenPort)
 
 		log.Printf("Listening on: %s", l)
 

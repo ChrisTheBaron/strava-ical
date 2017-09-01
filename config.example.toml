@@ -7,7 +7,10 @@
 #
 #
 # This is the main config file for strava-ical.
-# Any changes to this config should be reflected in the struct `structs.Config`
+# Any changes to this config should be reflected in the struct `entities.Config`
+
+rootUrl = "localhost"
+protocol = "http" # http or https
 
 stravaClientId = 12345
 stravaClientSecret = "abcdef12345"
@@ -19,9 +22,9 @@ dbPath = "./db.sqlite"
 
 # This is the config for the server
 [server]
-	address	= "strava.cyclingapps.tech"
-	port 	= 3000
-	timeout	= 0
+	listenAddress	= "localhost"
+	listenPort      = 80
+	timeout         = 0
 
 # This is the default config for the VCalendar
 [calendar]
@@ -38,7 +41,8 @@ dbPath = "./db.sqlite"
 	CALSCALE    = "GREGORIAN"
 
 [slugs]
-    login           = "/login"
-    oauth           = "/auth"
-    oauthcallback   = "/exchange_token"
-    calendars       = "/calendars"
+    oauth           = "auth"
+    oauthcallback   = "exchange_token"
+    calendars       = "calendars"
+    e404            = "404"
+    e505            = "500"

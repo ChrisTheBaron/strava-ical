@@ -6,16 +6,17 @@ import (
 	"github.com/ChrisTheBaron/strava-ical/entities"
 	"github.com/golang/glog"
 	"gopkg.in/dgrijalva/jwt-go.v3"
+	"net/http"
 )
 
 func GenerateJWT(config *entities.Config, user entities.User) (string, error) {
 
-	glog.Infof("Generating JWT for user id: %d, with key: %s", user.GetStravaId(), config.JWTKey)
+	glog.Infof("Generating JWT for user id: %d, with key: %s", user.StravaId, config.JWTKey)
 
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"uid": user.GetStravaId(),
+		"uid": user.StravaId,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -45,5 +46,37 @@ func ParseJWT(config *entities.Config, token string) (int, error) {
 	} else {
 		return 0, errors.New("Invalid JWT")
 	}
+
+}
+
+func GetTokenFromRequest(c *entities.Config, r *http.Request) string {
+
+	var token string
+
+	token = getTokenFromHeader(c, r)
+
+	if token == "" {
+		token = getTokenFromCooke(c, r)
+	}
+
+	return token
+
+}
+
+func getTokenFromCooke(c *entities.Config, r *http.Request) string {
+
+	cookie, err := r.Cookie(c.JWTCookieName)
+
+	if err != nil {
+		glog.Warning(err)
+		return ""
+	}
+
+	return cookie.Value
+}
+
+func getTokenFromHeader(c *entities.Config, r *http.Request) string {
+
+	return r.Header.Get("Bearer")
 
 }

@@ -1,0 +1,19 @@
+{{define "content"}}
+
+<div class="container">
+
+    <p>
+        Authenticted as {{.User.StravaId}}
+    </p>
+
+    <ul>
+        {{range .Calendars}}
+        <li>
+            UUID: {{.Id}} - <a href="webcal://{{url}}/calendars/{{.Id.String}}.ics">Add to Calendar</a>
+        </li>
+        {{end}}
+    </ul>
+
+</div>
+
+{{end}}

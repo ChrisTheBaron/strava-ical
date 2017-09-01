@@ -20,13 +20,13 @@ func NewCalendar(con *entities.Config, db *sql.DB) *Calendar {
 // Insert makes a new
 func (m *Calendar) Insert(calendar entities.Calendar) (insertId uuid.UUID, err error) {
 
-	if uuid.Equal(calendar.GetId(), uuid.Nil) {
+	if uuid.Equal(calendar.Id, uuid.Nil) {
 		insertId = uuid.NewV4()
 	} else {
-		insertId = calendar.GetId()
+		insertId = calendar.Id
 	}
 
-	_, err = m.db.Exec("INSERT INTO calendars (id, user_id) VALUES (?, ?)", insertId, calendar.GetUserId())
+	_, err = m.db.Exec("INSERT INTO calendars (id, user_id) VALUES (?, ?)", insertId, calendar.UserId)
 
 	return
 
@@ -44,7 +44,7 @@ func (m *Calendar) GetById(id uuid.UUID) (cal entities.Calendar, err error) {
 		return
 	}
 
-	cal = entities.NewCalendar(id, uid)
+	cal = entities.Calendar{Id: id, UserId: uid}
 
 	return
 
@@ -61,9 +61,11 @@ func (m *Calendar) GetAllForUser(uid int) (cals []entities.Calendar, err error) 
 	for res.Next() {
 		var user_id int
 		var id uuid.UUID
-		res.Scan(&id)
-		res.Scan(&user_id)
-		cals = append(cals, entities.NewCalendar(id, user_id))
+		err = res.Scan(&id, &user_id)
+		if err != nil {
+			return
+		}
+		cals = append(cals, entities.Calendar{Id: id, UserId: user_id})
 	}
 
 	return

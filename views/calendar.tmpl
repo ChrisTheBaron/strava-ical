@@ -1,0 +1,12 @@
+{{define "content"}}
+
+<div class="container">
+
+    <p>
+        UUID: {{.Calendar.Id.String}} - <a href="webcal://{{url}}/calendars/{{.Calendar.Id.String}}.ics">Add to
+        Calendar</a>
+    </p>
+
+</div>
+
+{{end}}
