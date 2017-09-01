@@ -95,7 +95,7 @@ func NewServer(c *entities.Config) (*Server, error) {
 		------------------------------------------
 	*/
 
-	router := mux.NewRouter()
+	router := mux.NewRouter().StrictSlash(true)
 
 	router.NotFoundHandler = http.HandlerFunc(ec.E404)
 
@@ -105,7 +105,7 @@ func NewServer(c *entities.Config) (*Server, error) {
 
 	getRouter.Handle("/", http.HandlerFunc(ic.Get))
 
-	getRouter.PathPrefix("/static").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	getRouter.PathPrefix("/static/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := strings.TrimLeft(r.URL.Path, "/")
 		glog.Infoln(url)
 		if asset, err := utils.Asset(url); err == nil {
@@ -117,19 +117,19 @@ func NewServer(c *entities.Config) (*Server, error) {
 		}
 	})
 
-	getRouter.Handle(fmt.Sprintf("/%s", c.Slugs.OAuth), http.HandlerFunc(ac.OAuthHandler))
+	getRouter.Handle(fmt.Sprintf("/%s/", c.Slugs.OAuth), http.HandlerFunc(ac.OAuthHandler))
 	getRouter.Handle(autoClbPath, authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure))
 
 	// /calendar/
 	// list all
-	getRouter.HandleFunc(fmt.Sprintf("/%s", c.Slugs.Calendars), am(http.HandlerFunc(cc.Get)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/", c.Slugs.Calendars), am(http.HandlerFunc(cc.Get)))
 
 	// create
-	postRouter.HandleFunc(fmt.Sprintf("/%s", c.Slugs.Calendars), am(http.HandlerFunc(cc.Post)))
+	postRouter.HandleFunc(fmt.Sprintf("/%s/", c.Slugs.Calendars), am(http.HandlerFunc(cc.Post)))
 
 	// list
 	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}.ics", c.Slugs.Calendars), http.HandlerFunc(cc.GetICALById))
-	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}/", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
 
 	s.UseHandler(router)
 

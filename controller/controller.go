@@ -35,6 +35,12 @@ func (c *controller) redirect(w http.ResponseWriter, url string) {
 }
 
 func (c *controller) redirectWithStatus(w http.ResponseWriter, url string, status int) {
-	w.Header().Set("Location", fmt.Sprintf("%s://%s/%s", c.config.Protocol, c.config.RootUrl, url))
+	var fullUrl string
+	if url == "/" || url == c.config.RootUrl {
+		fullUrl = fmt.Sprintf("%s://%s/", c.config.Protocol, c.config.RootUrl)
+	} else {
+		fullUrl = fmt.Sprintf("%s://%s/%s", c.config.Protocol, c.config.RootUrl, url)
+	}
+	w.Header().Set("Location", fullUrl)
 	w.WriteHeader(status)
 }
