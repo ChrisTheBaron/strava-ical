@@ -114,40 +114,64 @@ func (c *Calendar) GetICALById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	strava := c.sf.NewStrava(user.StravaAccessToken, user.StravaId)
-
-	acts, err := strava.GetUsersActivities()
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		glog.Error(err)
-		return
-	}
-
 	ic := c.config.Calendar
 
 	ic.NAME = fmt.Sprintf("Strava Activities - %s %s", user.Firstname, user.Lastname)
 	ic.X_WR_CALNAME = ic.NAME
 
-	for _, act := range acts {
-
-		ic.AddComponent(ical.VComponent(ical.VEvent{
-			UID:         fmt.Sprintf("%d", act.Id),
-			SUMMARY:     act.Name,
-			DESCRIPTION: fmt.Sprintf("%s\n\nDistance: %.2fkm", act.Name, act.Distance/1000),
-			DTSTART:     act.StartDateLocal,
-			DTEND:       act.StartDateLocal.Add(time.Duration(act.ElapsedTime) * time.Second),
-			DTSTAMP:     act.StartDateLocal,
-			LOCATION:    act.City,
-			TZID:        "Europe/London",
-			AllDay:      false,
-		}))
-
-	}
-
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s.ics", id.String()))
-	ic.Encode(w)
+
+	fw, ok := w.(http.Flusher)
+
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		glog.Errorln("expected http.ResponseWriter to be an http.Flusher")
+		return
+	}
+
+	ic.WriteHeader(w)
+
+	fw.Flush()
+
+	strava := c.sf.NewStrava(user.StravaAccessToken, user.StravaId)
+
+	actschan, errchan := strava.GetUsersActivities()
+
+	func() {
+		for {
+			select {
+			case act, ok := <-actschan:
+				if !ok {
+					return
+				}
+				ev := ical.VEvent{
+					UID:         fmt.Sprintf("%d", act.Id),
+					SUMMARY:     act.Name,
+					DESCRIPTION: fmt.Sprintf("%s\n\nDistance: %.2fkm", act.Name, act.Distance/1000),
+					DTSTART:     act.StartDateLocal,
+					DTEND:       act.StartDateLocal.Add(time.Duration(act.ElapsedTime) * time.Second),
+					DTSTAMP:     act.StartDateLocal,
+					LOCATION:    act.City,
+					TZID:        "Europe/London",
+					AllDay:      false,
+				}
+				ev.Write(w)
+				fw.Flush()
+			case err, ok = <-errchan:
+				if ok {
+					glog.Error(err)
+					return
+				}
+			default:
+			}
+		}
+	}()
+
+	// Doesn't matter that we don't have any events added.
+	// Will just write the end of the calendar.
+	ic.Write(w)
+	fw.Flush()
 
 }
 

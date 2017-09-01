@@ -29,7 +29,10 @@ func NewStravaFactory(config *entities.Config) StravaFactory {
 	}}
 }
 
-func (s *Strava) GetUsersActivities() (acts []*strava.ActivitySummary, err error) {
+func (s *Strava) GetUsersActivities() (chan strava.ActivitySummary, chan error) {
+
+	acts := make(chan strava.ActivitySummary, 200)
+	err := make(chan error, 1)
 
 	service := strava.NewAthletesService(s.client)
 
@@ -39,15 +42,27 @@ func (s *Strava) GetUsersActivities() (acts []*strava.ActivitySummary, err error
 
 	var page int = 1
 
-	for {
-		actspage, err := call.Page(page).Do()
-		if err != nil || len(actspage) == 0 {
-			break
+	go func() {
+		for {
+			actspage, e := call.Page(page).Do()
+			if e != nil {
+				err <- e
+				close(err)
+				close(acts)
+				break
+			}
+			if len(actspage) == 0 {
+				close(err)
+				close(acts)
+				break
+			}
+			for _, act := range actspage {
+				acts <- *act
+			}
+			page++
 		}
-		acts = append(acts, actspage...)
-		page++
-	}
+	}()
 
-	return
+	return acts, err
 
 }
