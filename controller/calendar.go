@@ -86,7 +86,7 @@ func (c *Calendar) GetICALById(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("No Id set"))
+		glog.Error("No Id set")
 		return
 	}
 
@@ -94,15 +94,7 @@ func (c *Calendar) GetICALById(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Bad Id"))
-		return
-	}
-
-	uid, err := c.getUserIdFromContext(r)
-
-	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("Not logged in"))
+		glog.Error(err)
 		return
 	}
 
@@ -114,13 +106,7 @@ func (c *Calendar) GetICALById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if cal.UserId != uid {
-		w.WriteHeader(http.StatusForbidden)
-		glog.Warningln("Calendar not owned by current user")
-		return
-	}
-
-	user, err := c.um.GetById(uid)
+	user, err := c.um.GetById(cal.UserId)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
