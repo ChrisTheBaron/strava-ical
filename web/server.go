@@ -66,6 +66,7 @@ func NewServer(c *entities.Config) (*Server, error) {
 	*/
 
 	am := middleware.NewVerifyJWT(um, db, c)
+	rm := middleware.NewRedirectLogger()
 
 	authenticator := strava.OAuthAuthenticator{
 		CallbackURL:            fmt.Sprintf("http://%s/%s", c.RootUrl, c.Slugs.OAuthCallback),
@@ -103,7 +104,7 @@ func NewServer(c *entities.Config) (*Server, error) {
 	postRouter := router.Methods("POST").Subrouter()
 	//deleteRouter := router.Methods("DELETE").Subrouter()
 
-	getRouter.Handle("/", http.HandlerFunc(ic.Get))
+	getRouter.Handle("/", rm(http.HandlerFunc(ic.Get)))
 
 	getRouter.PathPrefix("/static/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := strings.TrimLeft(r.URL.Path, "/")
@@ -117,19 +118,19 @@ func NewServer(c *entities.Config) (*Server, error) {
 		}
 	})
 
-	getRouter.Handle(fmt.Sprintf("/%s/", c.Slugs.OAuth), http.HandlerFunc(ac.OAuthHandler))
-	getRouter.Handle(autoClbPath, authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure))
+	getRouter.Handle(fmt.Sprintf("/%s/", c.Slugs.OAuth), rm(http.HandlerFunc(ac.OAuthHandler)))
+	getRouter.Handle(autoClbPath, rm(authenticator.HandlerFunc(ac.OAuthSuccess, ac.OAuthFailure)))
 
 	// /calendar/
 	// list all
-	getRouter.HandleFunc(fmt.Sprintf("/%s/", c.Slugs.Calendars), am(http.HandlerFunc(cc.Get)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/", c.Slugs.Calendars), am(rm(http.HandlerFunc(cc.Get))))
 
 	// create
-	postRouter.HandleFunc(fmt.Sprintf("/%s/", c.Slugs.Calendars), am(http.HandlerFunc(cc.Post)))
+	postRouter.HandleFunc(fmt.Sprintf("/%s/", c.Slugs.Calendars), am(rm(http.HandlerFunc(cc.Post))))
 
 	// list
-	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}.ics", c.Slugs.Calendars), http.HandlerFunc(cc.GetICALById))
-	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}/", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}.ics", c.Slugs.Calendars), rm(http.HandlerFunc(cc.GetICALById)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}/", c.Slugs.Calendars), am(rm(http.HandlerFunc(cc.GetById))))
 
 	s.UseHandler(router)
 
