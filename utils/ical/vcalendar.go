@@ -3,6 +3,7 @@ package ical
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/golang/glog"
 	"io"
 	"regexp"
@@ -58,19 +59,19 @@ func (c *VCalendar) WriteHeader(w io.Writer) error {
 
 	// use a slice map to preserve order during for range
 	attrs := []map[string]string{
-		{"VERSION:": c.VERSION},
-		{"PRODID:": c.PRODID},
-		{"URL:": c.URL},
-		{"NAME:": c.NAME},
-		{"X-WR-CALNAME:": c.X_WR_CALNAME},
-		{"DESCRIPTION:": c.DESCRIPTION},
-		{"X-WR-CALDESC:": c.X_WR_CALDESC},
-		{"TIMEZONE-ID:": c.TIMEZONE_ID},
-		{"X-WR-TIMEZONE:": c.X_WR_TIMEZONE},
-		{"REFRESH-INTERVAL;VALUE=DURATION:": c.REFRESH_INTERVAL},
-		{"X-PUBLISHED-TTL:": c.X_PUBLISHED_TTL},
-		{"CALSCALE:": c.CALSCALE},
-		{"METHOD:": c.METHOD},
+		{"VERSION": c.VERSION},
+		{"PRODID": c.PRODID},
+		{"URL": c.URL},
+		{"NAME": c.NAME},
+		{"X-WR-CALNAME": c.X_WR_CALNAME},
+		{"DESCRIPTION": c.DESCRIPTION},
+		{"X-WR-CALDESC": c.X_WR_CALDESC},
+		{"TIMEZONE-ID": c.TIMEZONE_ID},
+		{"X-WR-TIMEZONE": c.X_WR_TIMEZONE},
+		{"REFRESH-INTERVAL;VALUE=DURATION": c.REFRESH_INTERVAL},
+		{"X-PUBLISHED-TTL": c.X_PUBLISHED_TTL},
+		{"CALSCALE": c.CALSCALE},
+		{"METHOD": c.METHOD},
 	}
 
 	for _, item := range attrs {
@@ -78,7 +79,7 @@ func (c *VCalendar) WriteHeader(w io.Writer) error {
 			if len(v) == 0 {
 				continue
 			}
-			if _, err := b.WriteString(k + escapeCharacters(v) + "\r\n"); err != nil {
+			if _, err := b.WriteString(fmt.Sprintf("%s:%s\r\n", k, escapeCharacters(v))); err != nil {
 				return err
 			}
 		}

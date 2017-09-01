@@ -2,6 +2,7 @@ package ical
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"time"
 )
@@ -42,37 +43,38 @@ func (e VEvent) Write(w io.Writer) error {
 	if _, err := b.WriteString("BEGIN:VEVENT\r\n"); err != nil {
 		return err
 	}
-	if _, err := b.WriteString("DTSTAMP:" + e.DTSTAMP.UTC().Format(stampLayout) + "\r\n"); err != nil {
+	if _, err := b.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", e.DTSTAMP.UTC().Format(stampLayout))); err != nil {
 		return err
 	}
-	if _, err := b.WriteString("UID:" + e.UID + "\r\n"); err != nil {
+	if _, err := b.WriteString(fmt.Sprintf("UID:%s\r\n", e.UID)); err != nil {
 		return err
 	}
 
 	if len(e.TZID) != 0 && e.TZID != "UTC" {
-		if _, err := b.WriteString("TZID:" + e.TZID + "\r\n"); err != nil {
+		if _, err := b.WriteString(fmt.Sprintf("TZID:%s\r\n", e.TZID)); err != nil {
 			return err
 		}
 	}
 
-	if _, err := b.WriteString("SUMMARY:" + escapeCharacters(e.SUMMARY) + "\r\n"); err != nil {
+	if _, err := b.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeCharacters(e.SUMMARY))); err != nil {
 		return err
 	}
+
 	if e.DESCRIPTION != "" {
-		if _, err := b.WriteString("DESCRIPTION:" + escapeCharacters(e.DESCRIPTION) + "\r\n"); err != nil {
+		if _, err := b.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeCharacters(e.DESCRIPTION))); err != nil {
 			return err
 		}
 	}
 	if e.LOCATION != "" {
-		if _, err := b.WriteString("LOCATION:" + escapeCharacters(e.LOCATION) + "\r\n"); err != nil {
+		if _, err := b.WriteString(fmt.Sprintf("LOCATION:%s\r\n", escapeCharacters(e.LOCATION))); err != nil {
 			return err
 		}
 	}
-	if _, err := b.WriteString("DTSTART;" + tzidTxt + "VALUE=" + timeStampType + ":" + e.DTSTART.Format(timeStampLayout) + "\r\n"); err != nil {
+	if _, err := b.WriteString(fmt.Sprintf("DTSTART;%sVALUE=%s:%s\r\n", tzidTxt, timeStampType, e.DTSTART.Format(timeStampLayout))); err != nil {
 		return err
 	}
 
-	if _, err := b.WriteString("DTEND;" + tzidTxt + "VALUE=" + timeStampType + ":" + e.DTEND.Format(timeStampLayout) + "\r\n"); err != nil {
+	if _, err := b.WriteString(fmt.Sprintf("DTEND;%sVALUE=%s:%s\r\n", tzidTxt, timeStampType, e.DTEND.Format(timeStampLayout))); err != nil {
 		return err
 	}
 

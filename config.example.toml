@@ -28,7 +28,7 @@ dbPath = "./db.sqlite"
 
 # This is the default config for the VCalendar
 [calendar]
-	PRODID          = "-//Cycling Apps//Strava//EN"
+	PRODID          = "-//Cycle Apps//Strava//EN"
 	URL             = "http:/cyclingapps.tech/"
 	NAME            = "Strava Activities"
 	X_WR_CALNAME    = "Strava Activities"

@@ -119,6 +119,8 @@ func (c *Calendar) GetICALById(w http.ResponseWriter, r *http.Request) {
 	ic.NAME = fmt.Sprintf("Strava Activities - %s %s", user.Firstname, user.Lastname)
 	ic.X_WR_CALNAME = ic.NAME
 
+	ic.URL = fmt.Sprintf("%s://%s/%s/%s.ics", c.config.Protocol, c.config.RootUrl, c.config.Slugs.Calendars, id.String())
+
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%s.ics", id.String()))
 
