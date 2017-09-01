@@ -128,7 +128,7 @@ func NewServer(c *entities.Config) (*Server, error) {
 	postRouter.HandleFunc(fmt.Sprintf("/%s", c.Slugs.Calendars), am(http.HandlerFunc(cc.Post)))
 
 	// list
-	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}.ics", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetICALById)))
+	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}.ics", c.Slugs.Calendars), http.HandlerFunc(cc.GetICALById))
 	getRouter.HandleFunc(fmt.Sprintf("/%s/{id:.{36}}", c.Slugs.Calendars), am(http.HandlerFunc(cc.GetById)))
 
 	s.UseHandler(router)
