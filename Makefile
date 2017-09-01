@@ -4,6 +4,7 @@ GO_BINDATA=go-bindata
 OUT=./strava-ical
 
 $(OUT): */**.go utils/assets.go
+	$(GO) get
 	$(GOFMT) -w */**.go
 	$(GO) build
 
