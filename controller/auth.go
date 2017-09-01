@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/ChrisTheBaron/strava-ical/entities"
 	"github.com/ChrisTheBaron/strava-ical/model"
 	"github.com/ChrisTheBaron/strava-ical/utils"
@@ -52,7 +51,7 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 
 	if err != nil {
 		glog.Error(err)
-		a.redirect(w, "/")
+		a.redirect(w, a.config.Slugs.E500)
 		return
 	}
 
@@ -62,7 +61,7 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 
 	if err != nil {
 		glog.Error(err)
-		a.redirect(w, "/")
+		a.redirect(w, a.config.Slugs.E500)
 		return
 	}
 
@@ -74,7 +73,7 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 		Value:    token,
 		Name:     a.config.JWTCookieName,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   a.config.Protocol == "https",
 		Expires:  expiration,
 		Path:     "/",
 		Domain:   a.config.RootUrl,
@@ -86,22 +85,25 @@ func (a *Auth) OAuthSuccess(auth *strava.AuthorizationResponse, w http.ResponseW
 
 }
 
-// OAuthFailure redirects to login/ with an error messsage
-// @TODO: Do that
+// OAuthFailure redirects to login/ with an error message
 func (a *Auth) OAuthFailure(err error, w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Authorization Failure:")
+
+	glog.Warningln("Authorization Failure:")
 
 	// some standard error checking
 	if err == strava.OAuthAuthorizationDeniedErr {
-		fmt.Fprintln(w, "The user clicked the 'Do not Authorize' button on the previous page.")
-		fmt.Fprintln(w, "This is the main error your application should handle.")
+		glog.Warningln("The user clicked the 'Do not Authorize' button on the previous page.")
+		glog.Warningln("This is the main error your application should handle.")
 	} else if err == strava.OAuthInvalidCredentialsErr {
-		fmt.Fprintln(w, "You provided an incorrect client_id or client_secret.\nDid you remember to set them at the begininng of this file?")
+		glog.Warningln("You provided an incorrect client_id or client_secret.\nDid you remember to set them at the beginning of this file?")
 	} else if err == strava.OAuthInvalidCodeErr {
-		fmt.Fprintln(w, "The temporary token was not recognized, this shouldn't happen normally")
+		glog.Warningln("The temporary token was not recognized, this shouldn't happen normally")
 	} else if err == strava.OAuthServerErr {
-		fmt.Fprintln(w, "There was some sort of server error, try again to see if the problem continues")
+		glog.Warningln("There was some sort of server error, try again to see if the problem continues")
 	} else {
-		fmt.Fprintln(w, err)
+		glog.Warningln(err)
 	}
+
+	a.redirect(w, "/")
+
 }
